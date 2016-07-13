@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.bukkit.entity.Player;
-import org.bukkit.World;
+import cn.nukkit.Player;
+import cn.nukkit.level.Level;
 
 // image output stuff, for debugging method at bottom of this file
 import java.awt.*;
@@ -20,25 +20,25 @@ import javax.imageio.*;
 
 public class WorldFileData
 {
-	private transient World world;
+	private transient Level world;
 	private transient File regionFolder = null;
 	private transient File[] regionFiles = null;
 	private transient Player notifyPlayer = null;
 	private transient Map<CoordXZ, List<Boolean>> regionChunkExistence = Collections.synchronizedMap(new HashMap<CoordXZ, List<Boolean>>());
 
 	// Use this static method to create a new instance of this class. If null is returned, there was a problem so any process relying on this should be cancelled.
-	public static WorldFileData create(World world, Player notifyPlayer)
+	public static WorldFileData create(Level world, Player notifyPlayer)
 	{
 		WorldFileData newData = new WorldFileData(world, notifyPlayer);
 
-		newData.regionFolder = new File(newData.world.getWorldFolder(), "region");
+		newData.regionFolder = new File(newData.world.getServer().getDataPath() + "worlds/" + newData.world.getFolderName() + "/" , "region");
 		if (!newData.regionFolder.exists() || !newData.regionFolder.isDirectory())
 		{
 			// check for region folder inside a DIM* folder (DIM-1 for nether, DIM1 for end, DIMwhatever for custom world types)
-			File[] possibleDimFolders = newData.world.getWorldFolder().listFiles(new DimFolderFileFilter());
+			File[] possibleDimFolders = new File(newData.world.getServer().getDataPath() + "worlds/" + newData.world.getFolderName() + "/").listFiles(new DimFolderFileFilter());
 			for (File possibleDimFolder : possibleDimFolders)
 			{
-				File possible = new File(newData.world.getWorldFolder(), possibleDimFolder.getName() + File.separator + "region");
+				File possible = new File(newData.world.getServer().getDataPath() + "worlds/" + newData.world.getFolderName() + "/", possibleDimFolder.getName() + File.separator + "region");
 				if (possible.exists() && possible.isDirectory())
 				{
 					newData.regionFolder = possible;
@@ -47,7 +47,7 @@ public class WorldFileData
 			}
 			if (!newData.regionFolder.exists() || !newData.regionFolder.isDirectory())
 			{
-				newData.sendMessage("Could not validate folder for world's region files. Looked in "+newData.world.getWorldFolder().getPath()+" for valid DIM* folder with a region folder in it.");
+				newData.sendMessage("Could not validate folder for world's region files. Looked in "+new File(newData.world.getServer().getDataPath() + "worlds/" + newData.world.getFolderName() + "/").getPath()+" for valid DIM* folder with a region folder in it.");
 				return null;
 			}
 		}
@@ -68,7 +68,7 @@ public class WorldFileData
 	}
 
 	// the constructor is private; use create() method above to create an instance of this class.
-	private WorldFileData(World world, Player notifyPlayer)
+	private WorldFileData(Level world, Player notifyPlayer)
 	{
 		this.world = world;
 		this.notifyPlayer = notifyPlayer;

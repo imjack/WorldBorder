@@ -1,14 +1,12 @@
 package com.wimbli.WorldBorder;
 
-import org.bukkit.Chunk;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.Location;
-
+import cn.nukkit.event.EventHandler;
+import cn.nukkit.event.EventPriority;
+import cn.nukkit.event.Listener;
+import cn.nukkit.event.level.ChunkLoadEvent;
+import cn.nukkit.event.player.PlayerTeleportEvent;
+import cn.nukkit.level.Location;
+import cn.nukkit.math.Vector3;
 
 public class WBListener implements Listener
 {
@@ -25,26 +23,31 @@ public class WBListener implements Listener
 		Location newLoc = BorderCheckTask.checkPlayer(event.getPlayer(), event.getTo(), true, true);
 		if (newLoc != null)
 		{
-			if(event.getCause() == PlayerTeleportEvent.TeleportCause.ENDER_PEARL && Config.getDenyEnderpearl())
+			if(event.getCause() == PlayerTeleportEvent.TeleportCause.UNKNOWN && Config.getDenyEnderpearl())
 			{
 				event.setCancelled(true);
 				return;
 			}
-
-			event.setTo(newLoc);
+			event.setCancelled(true); 
+			event.getPlayer().setMotion(newLoc);
 		}
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-	public void onPlayerPortal(PlayerPortalEvent event)
+	public void onPlayerPortal(PlayerTeleportEvent event)
 	{
+		if(event.getCause() == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL){
+			
 		// if knockback is set to 0, or portal redirection is disabled, simply return
 		if (Config.KnockBack() == 0.0 || !Config.portalRedirection())
 			return;
 
 		Location newLoc = BorderCheckTask.checkPlayer(event.getPlayer(), event.getTo(), true, false);
-		if (newLoc != null)
-			event.setTo(newLoc);
+			if (newLoc != null) {
+				event.setCancelled(true);
+				event.getPlayer().setMotion(newLoc);
+			}
+		}
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)

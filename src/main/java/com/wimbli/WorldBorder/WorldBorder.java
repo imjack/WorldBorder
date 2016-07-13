@@ -1,10 +1,11 @@
 package com.wimbli.WorldBorder;
 
-import org.bukkit.Location;
-import org.bukkit.plugin.java.JavaPlugin;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.Location;
+import cn.nukkit.plugin.PluginBase;
 
 
-public class WorldBorder extends JavaPlugin
+public class WorldBorder extends PluginBase
 {
 	public static volatile WorldBorder plugin = null;
 	public static volatile WBCommand wbCommand = null;
@@ -15,29 +16,26 @@ public class WorldBorder extends JavaPlugin
 		if (plugin == null)
 			plugin = this;
 		if (wbCommand == null)
-			wbCommand = new WBCommand();
+			wbCommand = new WBCommand("wborder");
 
 		// Load (or create new) config file
 		Config.load(this, false);
 
 		// our one real command, though it does also have aliases "wb" and "worldborder"
-		getCommand("wborder").setExecutor(wbCommand);
+		this.getServer().getCommandMap().register("wborder", wbCommand);//("wborder", wbCommand);
 
 		// keep an eye on teleports, to redirect them to a spot inside the border if necessary
 		getServer().getPluginManager().registerEvents(new WBListener(), this);
 
-		// integrate with DynMap if it's available
-		DynMapFeatures.setup();
 
 		// Well I for one find this info useful, so...
-		Location spawn = getServer().getWorlds().get(0).getSpawnLocation();
+		Location spawn = getServer().getLevels().values().toArray(new Level[0])[0].getSpawnLocation().getLocation();
 		Config.log("For reference, the main world's spawn location is at X: " + Config.coord.format(spawn.getX()) + " Y: " + Config.coord.format(spawn.getY()) + " Z: " + Config.coord.format(spawn.getZ()));
 	}
 
 	@Override
 	public void onDisable()
 	{
-		DynMapFeatures.removeAllBorders();
 		Config.StopBorderTimer();
 		Config.StoreFillTask();
 		Config.StopFillTask();

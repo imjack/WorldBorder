@@ -2,11 +2,11 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-import org.bukkit.World;
+import com.wimbli.WorldBorder.Config;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.command.CommandSender;
+import cn.nukkit.level.Level;
 
 
 public class CmdSetcorners extends WBCmd
@@ -29,11 +29,11 @@ public class CmdSetcorners extends WBCmd
 	{
 		if (worldName == null)
 		{
-			worldName = player.getWorld().getName();
+			worldName = player.getLevel().getName();
 		}
 		else
 		{
-			World worldTest = sender.getServer().getWorld(worldName);
+			Level worldTest = sender.getServer().getLevelByName(worldName);
 			if (worldTest == null)
 				sender.sendMessage("The world you specified (\"" + worldName + "\") could not be found on the server, but data for it will be stored anyway.");
 		}

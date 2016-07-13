@@ -2,10 +2,11 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import com.wimbli.WorldBorder.BorderData;
+import com.wimbli.WorldBorder.Config;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.command.CommandSender;
 
 
 public class CmdRadius extends WBCmd
@@ -26,7 +27,7 @@ public class CmdRadius extends WBCmd
 	public void execute(CommandSender sender, Player player, List<String> params, String worldName)
 	{
 		if (worldName == null)
-			worldName = player.getWorld().getName();
+			worldName = player.getLevel().getName();
 
 		BorderData border = Config.Border(worldName);
 		if (border == null)

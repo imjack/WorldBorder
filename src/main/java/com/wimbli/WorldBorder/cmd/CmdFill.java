@@ -2,11 +2,14 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import com.wimbli.WorldBorder.Config;
+import com.wimbli.WorldBorder.CoordXZ;
+import com.wimbli.WorldBorder.WorldBorder;
+import com.wimbli.WorldBorder.WorldFillTask;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.Server;
+import cn.nukkit.command.CommandSender;
 
 
 public class CmdFill extends WBCmd
@@ -60,7 +63,7 @@ public class CmdFill extends WBCmd
 		if (worldName == null && !confirm)
 		{
 			if (player != null)
-				worldName = player.getWorld().getName();
+				worldName = player.getLevel().getName();
 			else
 			{
 				sendErrorAndHelp(sender, "You must specify a world!");
@@ -126,10 +129,10 @@ public class CmdFill extends WBCmd
 				ticks = 20 / fillFrequency;
 
 /*	*/		Config.log("world: " + fillWorld + "  padding: " + fillPadding + "  repeats: " + repeats + "  ticks: " + ticks);			
-			Config.fillTask = new WorldFillTask(Bukkit.getServer(), player, fillWorld, fillPadding, repeats, ticks, fillForceLoad);
+			Config.fillTask = new WorldFillTask(Server.getInstance(), player, fillWorld, fillPadding, repeats, ticks, fillForceLoad);
 			if (Config.fillTask.valid())
 			{
-				int task = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(WorldBorder.plugin, Config.fillTask, ticks, ticks);
+				int task = Server.getInstance().getScheduler().scheduleDelayedRepeatingTask(Config.fillTask, ticks, ticks).getTaskId();
 				Config.fillTask.setTaskID(task);
 				sender.sendMessage("WorldBorder map generation task for world \"" + fillWorld + "\" started.");
 			}

@@ -1,21 +1,22 @@
 package com.wimbli.WorldBorder;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Set;
 
-import org.bukkit.Chunk;
-import org.bukkit.entity.Player;
-import org.bukkit.Server;
-import org.bukkit.World;
-
+import cn.nukkit.Player;
+import cn.nukkit.Server;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.format.Chunk;
+import cn.nukkit.level.format.generic.BaseFullChunk;
 
 public class WorldFillTask implements Runnable
 {
 	// general task-related reference data
 	private transient Server server = null;
-	private transient World world = null;
+	private transient Level world = null;
 	private transient BorderData border = null;
 	private transient WorldFileData worldData = null;
 	private transient boolean readyToGo = false;
@@ -64,7 +65,7 @@ public class WorldFillTask implements Runnable
 		this.chunksPerRun = chunksPerRun;
 		this.forceLoad = forceLoad;
 
-		this.world = server.getWorld(worldName);
+		this.world = server.getLevelByName(worldName);
 		if (this.world == null)
 		{
 			if (worldName.isEmpty())
@@ -107,8 +108,8 @@ public class WorldFillTask implements Runnable
 		
 		
 		// keep track of the chunks which are already loaded when the task starts, to not unload them
-		Chunk[] originals = world.getLoadedChunks();
-		for (Chunk original : originals)
+		Collection<BaseFullChunk> originals = world.getChunks().values();
+		for (BaseFullChunk original : originals)
 		{
 			originalChunks.add(new CoordXZ(original.getX(), original.getZ()));
 		}
@@ -148,33 +149,28 @@ public class WorldFillTask implements Runnable
 			sendMessage("Available memory is sufficient, automatically continuing.");
 		}
 
-		if (server == null || !readyToGo || paused)
-			return;
-
+		if (server == null || !readyToGo || paused){
+			return;}
 		// this is set so it only does one iteration at a time, no matter how frequently the timer fires
 		readyToGo = false;
 		// and this is tracked to keep one iteration from dragging on too long and possibly choking the system if the user specified a really high frequency
 		long loopStartTime = Config.Now();
-
 		for (int loop = 0; loop < chunksPerRun; loop++)
 		{
 			// in case the task has been paused while we're repeating...
 			if (paused || pausedForMemory)
 				return;
-
 			long now = Config.Now();
 
 			// every 5 seconds or so, give basic progress report to let user know how it's going
 			if (now > lastReport + 5000)
 				reportProgress();
-
 			// if this iteration has been running for 45ms (almost 1 tick) or more, stop to take a breather
 			if (now > loopStartTime + 45)
 			{
 				readyToGo = true;
 				return;
 			}
-
 			// if we've made it at least partly outside the border, skip past any such chunks
 			while (!border.insideBorder(CoordXZ.chunkToBlock(x) + 8, CoordXZ.chunkToBlock(z) + 8))
 			{
@@ -182,7 +178,6 @@ public class WorldFillTask implements Runnable
 					return;
 			}
 			insideBorder = true;
-
 			if (!forceLoad)
 			{
 				// skip past any chunks which are confirmed as fully generated using our super-special isChunkFullyGenerated routine
@@ -193,28 +188,23 @@ public class WorldFillTask implements Runnable
 						return;
 				}
 			}
-
 			// load the target chunk and generate it if necessary
 			world.loadChunk(x, z, true);
 			worldData.chunkExistsNow(x, z);
-
 			// There need to be enough nearby chunks loaded to make the server populate a chunk with trees, snow, etc.
 			// So, we keep the last few chunks loaded, and need to also temporarily load an extra inside chunk (neighbor closest to center of map)
 			int popX = !isZLeg ? x : (x + (isNeg ? -1 : 1));
 			int popZ = isZLeg ? z : (z + (!isNeg ? -1 : 1));
 			world.loadChunk(popX, popZ, false);
-
 			// make sure the previous chunk in our spiral is loaded as well (might have already existed and been skipped over)
 			if (!storedChunks.contains(lastChunk) && !originalChunks.contains(lastChunk))
 			{
 				world.loadChunk(lastChunk.x, lastChunk.z, false);
 				storedChunks.add(new CoordXZ(lastChunk.x, lastChunk.z));
 			}
-
 			// Store the coordinates of these latest 2 chunks we just loaded, so we can unload them after a bit...
 			storedChunks.add(new CoordXZ(popX, popZ));
 			storedChunks.add(new CoordXZ(x, z));
-
 			// If enough stored chunks are buffered in, go ahead and unload the oldest to free up memory
 			while (storedChunks.size() > 8)
 			{
@@ -222,12 +212,10 @@ public class WorldFillTask implements Runnable
 				if (!originalChunks.contains(coord))
 					world.unloadChunkRequest(coord.x, coord.z);
 			}
-
 			// move on to next chunk
 			if (!moveToNext())
 				return;
 		}
-
 		// ready for the next iteration to run
 		readyToGo = true;
 	}

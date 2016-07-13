@@ -2,11 +2,11 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import com.wimbli.WorldBorder.Config;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.Server;
+import cn.nukkit.command.CommandSender;
 
 
 public class CmdBypass extends WBCmd
@@ -49,7 +49,7 @@ public class CmdBypass extends WBCmd
 
 		Config.setPlayerBypass(sPlayer, bypassing);
 
-		Player target = Bukkit.getPlayer(sPlayer);
+		Player target = Server.getInstance().getPlayer(sPlayer);
 		if (target != null && target.isOnline())
 			target.sendMessage("Border bypass is now " + enabledColored(bypassing) + ".");
 

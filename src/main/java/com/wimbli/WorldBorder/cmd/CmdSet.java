@@ -2,13 +2,13 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-import org.bukkit.Location;
-import org.bukkit.World;
+import com.wimbli.WorldBorder.Config;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.Server;
+import cn.nukkit.command.CommandSender;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.Location;
 
 
 public class CmdSet extends WBCmd
@@ -49,7 +49,7 @@ public class CmdSet extends WBCmd
 				return;
 			}
 
-			World world = sender.getServer().getWorld(worldName);
+			Level world = sender.getServer().getLevelByName(worldName);
 			if (world == null)
 			{
 				if (params.get(params.size() - 1).equalsIgnoreCase("spawn"))
@@ -70,14 +70,14 @@ public class CmdSet extends WBCmd
 					sendErrorAndHelp(sender, "You must specify a world name from console if not specifying a player name.");
 					return;
 				}
-				player = Bukkit.getPlayer(params.get(params.size() - 1));
+				player = Server.getInstance().getPlayer(params.get(params.size() - 1));
 				if (player == null || ! player.isOnline())
 				{
 					sendErrorAndHelp(sender, "The player you specified (\"" + params.get(params.size() - 1) + "\") does not appear to be online.");
 					return;
 				}
 			}
-			worldName = player.getWorld().getName();
+			worldName = player.getLevel().getName();
 		}
 
 		int radiusX, radiusZ;
@@ -88,20 +88,20 @@ public class CmdSet extends WBCmd
 		{
 			if (params.get(params.size() - 1).equalsIgnoreCase("spawn"))
 			{	// "spawn" specified for x/z coordinates
-				Location loc = sender.getServer().getWorld(worldName).getSpawnLocation();
+				Location loc = sender.getServer().getLevelByName(worldName).getSpawnLocation().getLocation();
 				x = loc.getX();
 				z = loc.getZ();
 				radiusCount -= 1;
 			}
 			else if (params.size() > 2 && params.get(params.size() - 2).equalsIgnoreCase("player"))
 			{	// player name specified for x/z coordinates
-				Player playerT = Bukkit.getPlayer(params.get(params.size() - 1));
+				Player playerT = Server.getInstance().getPlayer(params.get(params.size() - 1));
 				if (playerT == null || ! playerT.isOnline())
 				{
 					sendErrorAndHelp(sender, "The player you specified (\"" + params.get(params.size() - 1) + "\") does not appear to be online.");
 					return;
 				}
-				worldName = playerT.getWorld().getName();
+				worldName = playerT.getLevel().getName();
 				x = playerT.getLocation().getX();
 				z = playerT.getLocation().getZ();
 				radiusCount -= 2;

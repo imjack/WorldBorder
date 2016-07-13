@@ -2,10 +2,11 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import com.wimbli.WorldBorder.BorderData;
+import com.wimbli.WorldBorder.Config;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.command.CommandSender;
 
 
 public class CmdWrap extends WBCmd
@@ -42,7 +43,7 @@ public class CmdWrap extends WBCmd
 		// no world specified, just wrap on/off
 		else
 		{
-			worldName = player.getWorld().getName();
+			worldName = player.getLevel().getName();
 			wrap = strAsBool(params.get(0));
 		}
 

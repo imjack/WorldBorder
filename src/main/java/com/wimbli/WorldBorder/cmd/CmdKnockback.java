@@ -2,10 +2,10 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import com.wimbli.WorldBorder.Config;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.command.CommandSender;
 
 
 public class CmdKnockback extends WBCmd

@@ -6,27 +6,26 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.ChatColor;
-import org.bukkit.Effect;
-import org.bukkit.entity.Player;
-import org.bukkit.Location;
-import org.bukkit.World;
+import cn.nukkit.Player;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.Location;
+import cn.nukkit.level.particle.SmokeParticle;
+import cn.nukkit.plugin.PluginLogger;
+import cn.nukkit.utils.ConfigSection;
+import cn.nukkit.utils.LogLevel;
+import cn.nukkit.utils.TextFormat;
 
 
 public class Config
 {
 	// private stuff used within this class
 	private static WorldBorder plugin;
-	private static FileConfiguration cfg = null;
-	private static Logger wbLog = null;
+	private static cn.nukkit.utils.Config cfg = null;
+	private static PluginLogger wbLog = null;
 	public static volatile DecimalFormat coord = new DecimalFormat("0.0");
 	private static int borderTask = -1;
 	public static volatile WorldFillTask fillTask = null;
@@ -68,7 +67,6 @@ public class Config
 		if (logIt)
 			log("Border set. " + BorderDescription(world));
 		save(true);
-		DynMapFeatures.showBorder(world, border);
 	}
 	public static void setBorder(String world, BorderData border)
 	{
@@ -128,7 +126,6 @@ public class Config
 		borders.remove(world);
 		log("Removed border for world \"" + world + "\".");
 		save(true);
-		DynMapFeatures.removeBorder(world);
 	}
 
 	public static void removeAllBorders()
@@ -136,7 +133,6 @@ public class Config
 		borders.clear();
 		log("Removed all borders for all worlds.");
 		save(true);
-		DynMapFeatures.removeAllBorders();
 	}
 
 	public static String BorderDescription(String world)
@@ -201,7 +197,6 @@ public class Config
 		shapeRound = round;
 		log("Set default border shape to " + (ShapeName()) + ".");
 		save(true);
-		DynMapFeatures.showAllBorders();
 	}
 
 	public static boolean ShapeRound()
@@ -249,13 +244,10 @@ public class Config
 		if (!whooshEffect())
 			return;
 
-		World world = loc.getWorld();
-		world.playEffect(loc, Effect.ENDER_SIGNAL, 0);
-		world.playEffect(loc, Effect.ENDER_SIGNAL, 0);
-		world.playEffect(loc, Effect.SMOKE, 4);
-		world.playEffect(loc, Effect.SMOKE, 4);
-		world.playEffect(loc, Effect.SMOKE, 4);
-		world.playEffect(loc, Effect.GHAST_SHOOT, 0);
+		Level world = loc.getLevel();
+		world.addParticle(new SmokeParticle(loc, 4));
+		world.addParticle(new SmokeParticle(loc, 4));
+		world.addParticle(new SmokeParticle(loc, 4));
 	}
 
 	public static boolean getIfPlayerKill()
@@ -352,7 +344,6 @@ public class Config
 		dynmapEnable = enable;
 		log("DynMap border display is now " + (enable ? "enabled" : "disabled") + ".");
 		save(true);
-		DynMapFeatures.showAllBorders();
 	}
 
 	public static boolean DynmapBorderEnabled()
@@ -365,7 +356,6 @@ public class Config
 		dynmapMessage = msg;
 		log("DynMap border label is now set to: " + msg);
 		save(true);
-		DynMapFeatures.showAllBorders();
 	}
 
 	public static String DynmapMessage()
@@ -404,14 +394,13 @@ public class Config
 	public static boolean isBorderTimerRunning()
 	{
 		if (borderTask == -1) return false;
-		return (plugin.getServer().getScheduler().isQueued(borderTask) || plugin.getServer().getScheduler().isCurrentlyRunning(borderTask));
+		return (plugin.getServer().getScheduler().isQueued(borderTask) || plugin.getServer().getScheduler().isQueued(borderTask));
 	}
 
 	public static void StartBorderTimer()
 	{
 		StopBorderTimer();
-
-		borderTask = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new BorderCheckTask(), timerTicks, timerTicks);
+		borderTask = plugin.getServer().getScheduler().scheduleRepeatingTask(new BorderCheckTask(), timerTicks).getTaskId();
 
 		if (borderTask == -1)
 			logWarn("Failed to start timed border-checking task! This will prevent the plugin from working. Try restarting Bukkit.");
@@ -449,7 +438,8 @@ public class Config
 		if (fillTask.valid())
 		{
 			fillTask.continueProgress(x, z, length, total);
-			int task = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, fillTask, 20, tickFrequency);
+			int task = plugin.getServer().getScheduler().scheduleDelayedRepeatingTask(fillTask, 20, tickFrequency).getTaskId();
+					
 			fillTask.setTaskID(task);
 		}
 	}
@@ -499,7 +489,7 @@ public class Config
 
 	public static String replaceAmpColors (String message)
 	{
-		return ChatColor.translateAlternateColorCodes('&', message);
+		return TextFormat.colorize(message);
 	}
 	// adapted from code posted by Sleaker
 	public static String stripAmpColors (String message)
@@ -508,21 +498,21 @@ public class Config
 	}
 
 
-	public static void log(Level lvl, String text)
+	public static void log(LogLevel lvl, String text)
 	{
 		wbLog.log(lvl, text);
 	}
 	public static void log(String text)
 	{
-		log(Level.INFO, text);
+		log(LogLevel.INFO, text);
 	}
 	public static void logWarn(String text)
 	{
-		log(Level.WARNING, text);
+		log(LogLevel.WARNING, text);
 	}
 	public static void logConfig(String text)
 	{
-		log(Level.INFO, "[CONFIG] " + text);
+		log(LogLevel.INFO, "[CONFIG] " + text);
 	}
 
 
@@ -532,7 +522,9 @@ public class Config
 	{	// load config from file
 		plugin = master;
 		wbLog = plugin.getLogger();
-
+		if(!plugin.getDataFolder().exists()){
+			plugin.getDataFolder().mkdirs();
+		}
 		plugin.reloadConfig();
 		cfg = plugin.getConfig();
 
@@ -579,26 +571,26 @@ public class Config
 		if (cfgVersion < 10)
 			denyEnderpearl = true;
 
-		ConfigurationSection worlds = cfg.getConfigurationSection("worlds");
+		ConfigSection worlds = cfg.getSection("worlds");
 		if (worlds != null)
 		{
 			Set<String> worldNames = worlds.getKeys(false);
 
 			for(String worldName : worldNames)
 			{
-				ConfigurationSection bord = worlds.getConfigurationSection(worldName);
+				ConfigSection bord = worlds.getSection(worldName);
 
 				// we're swapping "<" to "." at load since periods denote configuration nodes without a working way to change that, so world names with periods wreak havoc and are thus modified for storage
 				if (cfgVersion > 3)
 					worldName = worldName.replace("<", ".");
-
+				//TODO nukkit doesn't have this problem?
 				// backwards compatibility for config from before elliptical/rectangular borders were supported
-				if (bord.isSet("radius") && !bord.isSet("radiusX"))
-				{
-					int radius = bord.getInt("radius");
-					bord.set("radiusX", radius);
-					bord.set("radiusZ", radius);
-				}
+//				if (bord.isSet("radius") && !bord.isSet("radiusX"))
+//				{
+//					int radius = bord.getInt("radius");
+//					bord.set("radiusX", radius);
+//					bord.set("radiusZ", radius);
+//				}
 
 				Boolean overrideShape = (Boolean) bord.get("shape-round");
 				boolean wrap = (boolean) bord.getBoolean("wrapping", false);
@@ -609,7 +601,7 @@ public class Config
 		}
 
 		// if we have an unfinished fill task stored from a previous run, load it up
-		ConfigurationSection storedFillTask = cfg.getConfigurationSection("fillTask");
+		ConfigSection storedFillTask = cfg.getSection("fillTask");
 		if (storedFillTask != null)
 		{
 			String worldName = storedFillTask.getString("world");

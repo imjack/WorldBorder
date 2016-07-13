@@ -1,19 +1,22 @@
 package com.wimbli.WorldBorder;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.entity.Player;
-import org.bukkit.Server;
-import org.bukkit.World;
+import cn.nukkit.Player;
+import cn.nukkit.Server;
+import cn.nukkit.level.Level;
 
 
 public class WorldTrimTask implements Runnable
 {
 	// general task-related reference data
 	private transient Server server = null;
-	private transient World world = null;
+	private transient Level world = null;
 	private transient WorldFileData worldData = null;
 	private transient BorderData border = null;
 	private transient boolean readyToGo = false;
@@ -45,7 +48,7 @@ public class WorldTrimTask implements Runnable
 		this.notifyPlayer = player;
 		this.chunksPerRun = chunksPerRun;
 
-		this.world = server.getWorld(worldName);
+		this.world = server.getLevelByName(worldName);
 		if (this.world == null)
 		{
 			if (worldName.isEmpty())

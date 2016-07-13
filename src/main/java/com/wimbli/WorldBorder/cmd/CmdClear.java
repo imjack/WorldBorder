@@ -2,10 +2,11 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import com.wimbli.WorldBorder.BorderData;
+import com.wimbli.WorldBorder.Config;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.command.CommandSender;
 
 
 public class CmdClear extends WBCmd
@@ -50,7 +51,7 @@ public class CmdClear extends WBCmd
 				sendErrorAndHelp(sender, "You must specify a world name from console if not using \"clear all\".");
 				return;
 			}
-			worldName = player.getWorld().getName();
+			worldName = player.getLevel().getName();
 		}
 
 		BorderData border = Config.Border(worldName);

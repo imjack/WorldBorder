@@ -3,9 +3,9 @@ package com.wimbli.WorldBorder.cmd;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import cn.nukkit.Player;
+import cn.nukkit.command.CommandSender;
+import cn.nukkit.utils.TextFormat;
 
 
 public abstract class WBCmd
@@ -45,12 +45,12 @@ public abstract class WBCmd
 	 */
 
 	// color values for strings
-	public final static String C_CMD  = ChatColor.AQUA.toString();			// main commands
-	public final static String C_DESC = ChatColor.WHITE.toString();			// command descriptions
-	public final static String C_ERR  = ChatColor.RED.toString();			// errors / notices
-	public final static String C_HEAD = ChatColor.YELLOW.toString();		// command listing header
-	public final static String C_OPT  = ChatColor.DARK_GREEN.toString();	// optional values
-	public final static String C_REQ  = ChatColor.GREEN.toString();			// required values
+	public final static String C_CMD  = TextFormat.AQUA.toString();			// main commands
+	public final static String C_DESC = TextFormat.WHITE.toString();			// command descriptions
+	public final static String C_ERR  = TextFormat.RED.toString();			// errors / notices
+	public final static String C_HEAD = TextFormat.YELLOW.toString();		// command listing header
+	public final static String C_OPT  = TextFormat.DARK_GREEN.toString();	// optional values
+	public final static String C_REQ  = TextFormat.GREEN.toString();			// required values
 
 	// colorized root command, for console and for player
 	public final static String CMD_C = C_CMD + "wb ";
@@ -100,7 +100,7 @@ public abstract class WBCmd
 	// formatted and colorized text, intended for marking command name
 	public String commandEmphasized(String text)
 	{
-		return C_CMD + ChatColor.UNDERLINE + text + ChatColor.RESET + " ";
+		return C_CMD + TextFormat.UNDERLINE + text + TextFormat.RESET + " ";
 	}
 
 	// returns green "enabled" or red "disabled" text

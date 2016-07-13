@@ -2,11 +2,14 @@ package com.wimbli.WorldBorder.cmd;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
+import com.wimbli.WorldBorder.Config;
+import com.wimbli.WorldBorder.CoordXZ;
+import com.wimbli.WorldBorder.WorldBorder;
+import com.wimbli.WorldBorder.WorldTrimTask;
 
-import com.wimbli.WorldBorder.*;
+import cn.nukkit.Player;
+import cn.nukkit.Server;
+import cn.nukkit.command.CommandSender;
 
 
 public class CmdTrim extends WBCmd
@@ -59,7 +62,7 @@ public class CmdTrim extends WBCmd
 		if (worldName == null && !confirm)
 		{
 			if (player != null)
-				worldName = player.getWorld().getName();
+				worldName = player.getLevel().getName();
 			else
 			{
 				sendErrorAndHelp(sender, "You must specify a world!");
@@ -120,10 +123,10 @@ public class CmdTrim extends WBCmd
 			else
 				ticks = 20 / trimFrequency;
 
-			Config.trimTask = new WorldTrimTask(Bukkit.getServer(), player, trimWorld, trimPadding, repeats);
+			Config.trimTask = new WorldTrimTask(Server.getInstance(), player, trimWorld, trimPadding, repeats);
 			if (Config.trimTask.valid())
 			{
-				int task = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(WorldBorder.plugin, Config.trimTask, ticks, ticks);
+				int task = Server.getInstance().getScheduler().scheduleDelayedRepeatingTask(Config.trimTask, ticks, ticks).getTaskId();
 				Config.trimTask.setTaskID(task);
 				sender.sendMessage("WorldBorder map trimming task for world \"" + trimWorld + "\" started.");
 			}

@@ -4,16 +4,12 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Boat;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
-import org.bukkit.Location;
-import org.bukkit.util.Vector;
-import org.bukkit.World;
+import cn.nukkit.Player;
+import cn.nukkit.Server;
+import cn.nukkit.entity.Entity;
+import cn.nukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.Location;
 
 
 public class BorderCheckTask implements Runnable
@@ -25,7 +21,7 @@ public class BorderCheckTask implements Runnable
 		if (Config.KnockBack() == 0.0)
 			return;
 
-		Player[] players = Bukkit.getServer().getOnlinePlayers();
+		Player[] players = Server.getInstance().getOnlinePlayers().values().toArray(new Player[0]);
 
 		for (int i = 0; i < players.length; i++)
 		{
@@ -44,7 +40,7 @@ public class BorderCheckTask implements Runnable
 		Location loc = (targetLoc == null) ? player.getLocation().clone() : targetLoc;
 		if (loc == null) return null;
 
-		World world = loc.getWorld();
+		Level world = loc.getLevel();
 		if (world == null) return null;
 		BorderData border = Config.Border(world.getName());
 		if (border == null) return null;
@@ -69,46 +65,51 @@ public class BorderCheckTask implements Runnable
 		 * after players are ejected we can wait a few ticks (long enough for their client to receive new entity location)
 		 * and then set them as passenger of the vehicle again
 		 */
-		if (player.isInsideVehicle())
+		if (player.riding != null)
 		{
-			Entity ride = player.getVehicle();
-			player.leaveVehicle();
-			if (ride != null)
-			{	// vehicles need to be offset vertically and have velocity stopped
-				double vertOffset = (ride instanceof LivingEntity) ? 0 : ride.getLocation().getY() - loc.getY();
-				Location rideLoc = newLoc.clone();
-				rideLoc.setY(newLoc.getY() + vertOffset);
-				if (Config.Debug())
-					Config.logWarn("Player was riding a \"" + ride.toString() + "\".");
-				if (ride instanceof Boat)
-				{	// boats currently glitch on client when teleported, so crappy workaround is to remove it and spawn a new one
-					ride.remove();
-					ride = world.spawnEntity(rideLoc, EntityType.BOAT);
-				}
-				else
-				{
-					ride.setVelocity(new Vector(0, 0, 0));
-					ride.teleport(rideLoc, TeleportCause.PLUGIN);
-				}
-
-				if (Config.RemountTicks() > 0)
-				{
-					setPassengerDelayed(ride, player, player.getName(), Config.RemountTicks());
-					handlingVehicle = true;
-				}
-			}
+			//TODO eject players and move
+			System.out.println("Look into ejecting players ~~~ Remove this");
+//			Entity ride = player.riding;
+//			ride.rider =null;
+//			player.leaveVehicle();
+//			if (ride != null)
+//			{	// vehicles need to be offset vertically and have velocity stopped
+//				double vertOffset = (ride instanceof LivingEntity) ? 0 : ride.getLocation().getY() - loc.getY();
+//				Location rideLoc = newLoc.clone();
+//				rideLoc.setY(newLoc.getY() + vertOffset);
+//				if (Config.Debug())
+//					Config.logWarn("Player was riding a \"" + ride.toString() + "\".");
+//				if (ride instanceof Boat)
+//				{	// boats currently glitch on client when teleported, so crappy workaround is to remove it and spawn a new one
+//					ride.remove();
+//					ride = world.spawnEntity(rideLoc, EntityType.BOAT);
+//				}
+//				else
+//				{
+//					ride.setVelocity(new Vector(0, 0, 0));
+//					ride.teleport(rideLoc, TeleportCause.PLUGIN);
+//				}
+//
+//				if (Config.RemountTicks() > 0)
+//				{
+//					setPassengerDelayed(ride, player, player.getName(), Config.RemountTicks());
+//					handlingVehicle = true;
+//				}
+//			}
 		}
 
 		// check if player has something (a pet, maybe?) riding them; only possible through odd plugins.
 		// it can prevent all teleportation of the player completely, so it's very much not good and needs handling
-		if (player.getPassenger() != null)
+		if (player.rider != null)
 		{
-			Entity rider = player.getPassenger();
-			player.eject();
-			rider.teleport(newLoc, TeleportCause.PLUGIN);
-			player.sendMessage("Your passenger has been ejected.");
-			if (Config.Debug())
-				Config.logWarn("Player had a passenger riding on them: " + rider.getType());
+			//TODO fix players being ridden
+			System.out.println("player is being ridden ~~ remove this");
+//			Entity rider = player.getPassenger();
+//			player.eject();
+//			rider.teleport(newLoc, TeleportCause.PLUGIN);
+//			player.sendMessage("Your passenger has been ejected.");
+//			if (Config.Debug())
+//				Config.logWarn("Player had a passenger riding on them: " + rider.getType());
 		}
 
 
@@ -135,11 +136,11 @@ public class BorderCheckTask implements Runnable
 	{
 		if (Config.Debug())
 		{
-			Config.logWarn((notify ? "Border crossing" : "Check was run") + " in \"" + loc.getWorld().getName() + "\". Border " + border.toString());
+			Config.logWarn((notify ? "Border crossing" : "Check was run") + " in \"" + loc.getLevel().getName() + "\". Border " + border.toString());
 			Config.logWarn("Player position X: " + Config.coord.format(loc.getX()) + " Y: " + Config.coord.format(loc.getY()) + " Z: " + Config.coord.format(loc.getZ()));
 		}
 
-		Location newLoc = border.correctedPosition(loc, Config.ShapeRound(), player.isFlying());
+		Location newLoc = border.correctedPosition(loc, Config.ShapeRound(), player.isOnGround());//TODO check if player is flying not on ground
 
 		// it's remotely possible (such as in the Nether) a suitable location isn't available, in which case...
 		if (newLoc == null)
@@ -148,14 +149,14 @@ public class BorderCheckTask implements Runnable
 				Config.logWarn("Target new location unviable, using spawn or killing player.");
 			if (Config.getIfPlayerKill())
 			{
-				player.setHealth(0.0D);
+				player.setHealth(0.0F);
 				return null;
 			}
-			newLoc = player.getWorld().getSpawnLocation();
+			newLoc = player.getLevel().getSpawnLocation().getLocation();
 		}
 
 		if (Config.Debug())
-			Config.logWarn("New position in world \"" + newLoc.getWorld().getName() + "\" at X: " + Config.coord.format(newLoc.getX()) + " Y: " + Config.coord.format(newLoc.getY()) + " Z: " + Config.coord.format(newLoc.getZ()));
+			Config.logWarn("New position in world \"" + newLoc.getLevel().getName() + "\" at X: " + Config.coord.format(newLoc.getX()) + " Y: " + Config.coord.format(newLoc.getY()) + " Z: " + Config.coord.format(newLoc.getZ()));
 
 		if (notify)
 			player.sendMessage(Config.Message());
@@ -165,17 +166,18 @@ public class BorderCheckTask implements Runnable
 
 	private static void setPassengerDelayed(final Entity vehicle, final Player player, final String playerName, long delay)
 	{
-		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(WorldBorder.plugin, new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				handlingPlayers.remove(playerName.toLowerCase());
-				if (vehicle == null || player == null)
-					return;
-
-				vehicle.setPassenger(player);
-			}
-		}, delay);
+		System.out.println("setPassengerDelayed but the passenger can't be set");
+//		Server.getInstance().getScheduler().scheduleSyncDelayedTask(WorldBorder.plugin, new Runnable()
+//		{
+//			@Override
+//			public void run()
+//			{
+//				handlingPlayers.remove(playerName.toLowerCase());
+//				if (vehicle == null || player == null)
+//					return;
+//
+//				vehicle.setPassenger(player);
+//			}
+//		}, delay);
 	}
 }
